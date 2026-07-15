@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PadhAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Kalam:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --accent:#4F8EF7; --gold:#F4D35E; --bg:#0B0F14; --card:#151B23; --text:#EDF1F5; --sub:#8A97A6; --board:#1B3B2F; --boarddark:#142E24; }
+  *{box-sizing:border-box; margin:0; padding:0; font-family:'Inter',sans-serif;}
+  body{background:#000;}
+  .phone{width:420px; max-width:100vw; min-height:100vh; margin:0 auto; background:var(--bg); position:relative;}
+  .hidden{display:none !important;}
+  .screen{padding:0 0 80px;}
+  h1.title{font-family:'Poppins',sans-serif; font-weight:700; font-size:21px; color:#fff;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:18px 18px 10px;}
+  input,select{width:100%; background:#0B0F14; border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:11px 14px; color:#fff; font-size:14px; margin-bottom:12px; outline:none;}
+  .btn{width:100%; background:var(--accent); border:none; border-radius:10px; padding:12px; color:#fff; font-size:14.5px; font-weight:700; cursor:pointer;}
+  .btn.secondary{background:none; border:1px solid rgba(255,255,255,.15); color:#C8D0DA;}
+  .err{color:#FF6B6B; font-size:12.5px; margin-bottom:12px;}
+  /* AUTH */
+  #authScreen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;}
+  .auth-box{width:100%; background:var(--card); border-radius:20px; padding:28px;}
+  .auth-box h1{color:#fff; font-size:24px; text-align:center; margin-bottom:4px;}
+  .auth-sub{color:var(--sub); font-size:13px; text-align:center; margin-bottom:20px;}
+  .switch{text-align:center; margin-top:16px; font-size:13px; color:var(--sub);}
+  .switch span{color:var(--accent); cursor:pointer; font-weight:600;}
+  /* ONBOARDING */
+  #onboardScreen{min-height:100vh; display:flex; flex-direction:column; justify-content:center; padding:24px;}
+  .ob-title{color:#fff; font-size:20px; font-weight:700; margin-bottom:6px;}
+  .ob-sub{color:var(--sub); font-size:13px; margin-bottom:20px;}
+  .option-grid{display:flex; flex-direction:column; gap:10px; margin-bottom:24px;}
+  .option-card{background:var(--card); border:2px solid transparent; border-radius:14px; padding:14px 16px; color:#fff; font-size:14.5px; cursor:pointer; display:flex; align-items:center; gap:12px;}
+  .option-card.selected{border-color:var(--accent); background:rgba(79,142,247,.1);}
+  .option-emoji{font-size:22px;}
+  /* HOME */
+  .subject-card{margin:0 16px 14px; background:var(--card); border-radius:16px; padding:16px; cursor:pointer;}
+  .subject-head{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+  .subject-emoji{font-size:26px;}
+  .subject-name{color:#fff; font-size:15.5px; font-weight:700;}
+  .subject-desc{color:var(--sub); font-size:12px;}
+  .progress-bar{height:6px; background:rgba(255,255,255,.08); border-radius:4px; overflow:hidden;}
+  .progress-fill{height:100%; background:var(--accent); border-radius:4px;}
+  .lesson-row{display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer;}
+  .lesson-row:active{background:rgba(255,255,255,.03);}
+  .lesson-num{width:26px; height:26px; border-radius:50%; background:var(--card); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--sub); flex-shrink:0;}
+  .lesson-num.done{background:var(--accent); color:#fff;}
+  .lesson-name{flex:1; color:#fff; font-size:14px;}
+  /* CHALKBOARD player */
+  #playerScreen{min-height:100vh; display:flex; flex-direction:column; padding:18px;}
+  .board{width:100%; aspect-ratio:16/11; background:radial-gradient(ellipse at top left, var(--board) 0%, var(--boarddark) 100%); border-radius:12px; border:8px solid #3B2A1E; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; padding:20px; box-shadow:0 16px 40px rgba(0,0,0,.5);}
+  .board-title{font-family:'Kalam',cursive; font-weight:700; font-size:28px; color:var(--gold); text-align:center;}
+  .board-text{font-family:'Kalam',cursive; font-size:20px; color:#F5F0E1; text-align:center; line-height:1.5;}
+  .board-formula{font-family:'Kalam',cursive; font-size:22px; color:var(--gold); text-align:center; border:2px dashed rgba(244,211,94,.4); border-radius:10px; padding:14px 18px;}
+  .board-list{font-family:'Kalam',cursive; font-size:17px; color:#F5F0E1;}
+  .board-list div{margin-bottom:8px; display:flex; gap:8px;}
+  .dots{position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:5px;}
+  .dot{width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.2);}
+  .dot.active{background:var(--gold);}
+  .caption-box{margin-top:12px; min-height:40px; color:var(--sub); font-size:13px; line-height:1.5;}
+  .caption-box span.spoken{color:#F5F0E1;}
+  .player-controls{display:flex; gap:10px; align-items:center; margin-top:16px; justify-content:center;}
+  .ctrl-btn{border:none; border-radius:10px; cursor:pointer;}
+  /* QUIZ */
+  .quiz-q{color:#fff; font-size:16px; font-weight:600; margin:0 16px 16px;}
+  .quiz-opt{margin:0 16px 10px; background:var(--card); border:2px solid transparent; border-radius:12px; padding:13px 16px; color:#fff; font-size:14px; cursor:pointer;}
+  .quiz-opt.correct{border-color:#5BC98A; background:rgba(91,201,138,.12);}
+  .quiz-opt.wrong{border-color:#E85B5B; background:rgba(232,91,91,.12);}
+  /* nav */
+  .back{color:#fff; font-size:20px; cursor:pointer;}
+  .header-row{display:flex; align-items:center; gap:12px; padding:18px 16px 8px;}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- AUTH -->
+  <div id="authScreen">
+    <div class="auth-box">
+      <h1>📘 PadhAI</h1>
+      <div class="auth-sub" id="authSub">Login karo</div>
+      <input id="uname" placeholder="Username">
+      <input id="pword" type="password" placeholder="Password">
+      <div class="err hidden" id="authErr"></div>
+      <button class="btn" id="authBtn" onclick="doLogin()">Login</button>
+      <div class="switch"><span id="switchText" onclick="toggleMode()">Account nahi hai? Sign Up karo</span></div>
+    </div>
+  </div>
+
+  <!-- ONBOARDING -->
+  <div class="screen hidden" id="onboardScreen">
+    <div id="obStep1">
+      <div class="ob-title">Aap kis exam ki tayyari kar rahe ho?</div>
+      <div class="ob-sub">Isse hum aapke liye sahi content dikhayenge</div>
+      <div class="option-grid" id="examOptions"></div>
+      <button class="btn" onclick="goObStep2()">Aage Badho</button>
+    </div>
+    <div id="obStep2" class="hidden">
+      <div class="ob-title">Aap kis class/level tak padhe ho?</div>
+      <div class="ob-sub">Content aapke level ke hisaab se adjust hoga</div>
+      <div class="option-grid" id="levelOptions"></div>
+      <button class="btn" onclick="finishOnboarding()">Shuru Karo</button>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen hidden" id="homeScreen">
+    <div class="topbar">
+      <div>
+        <h1 class="title">PadhAI</h1>
+        <div style="color:var(--sub); font-size:12px" id="homeSub"></div>
+      </div>
+      <button class="btn secondary" style="width:auto; padding:8px 14px; font-size:12.5px" onclick="logout()">Logout</button>
+    </div>
+    <div style="padding:0 16px 16px">
+      <div class="subject-card" style="margin:0; border:1px solid rgba(79,142,247,.3);" onclick="showScreen('meraData')">
+        <div class="subject-head" style="margin-bottom:0">
+          <span class="subject-emoji">📋</span>
+          <div>
+            <div class="subject-name">Mera Data (Form-Fill Helper)</div>
+            <div class="subject-desc">Apni details save karo, form bharte time copy karo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="subjectList"></div>
+  </div>
+
+  <!-- MERA DATA -->
+  <div class="screen hidden" id="meraDataScreen">
+    <div class="header-row">
+      <span class="back" onclick="showScreen('home')">←</span>
+      <h1 class="title">Mera Data</h1>
+    </div>
+    <div style="padding:0 16px; color:var(--sub); font-size:12.5px; margin-bottom:16px; line-height:1.5">
+      Yeh details ek baar save karo. Jab bhi koi form bhare, yahan se copy karke paste kar dena — Captcha, OTP, Payment aap khud karoge.
+    </div>
+    <div style="padding:0 16px">
+      <input id="md_name" placeholder="Poora Naam">
+      <input id="md_father" placeholder="Father's Name">
+      <input id="md_dob" placeholder="Date of Birth (DD/MM/YYYY)">
+      <input id="md_address" placeholder="Address">
+      <input id="md_qualification" placeholder="Qualification (jaise Graduate)">
+      <input id="md_category" placeholder="Category (General/OBC/SC/ST)">
+      <input id="md_mobile" placeholder="Mobile Number">
+      <input id="md_email" placeholder="Email">
+      <button class="btn" onclick="saveMeraData()">Save Karo</button>
+    </div>
+    <div id="meraDataView" style="padding:0 16px; margin-top:20px;"></div>
+  </div>
+
+  <!-- LESSON LIST for a subject -->
+  <div class="screen hidden" id="lessonListScreen">
+    <div class="header-row">
+      <span class="back" onclick="showScreen('home')">←</span>
+      <h1 class="title" id="lessonListTitle"></h1>
+    </div>
+    <div id="lessonListBody"></div>
+  </div>
+
+  <!-- LESSON PLAYER -->
+  <div id="playerScreen" class="hidden">
+    <div class="header-row" style="padding:0 0 12px">
+      <span class="back" onclick="stopAndGoBack()">←</span>
+      <h1 class="title" id="playerTitle" style="font-size:15px"></h1>
+    </div>
+    <div class="board" id="boardArea"></div>
+    <div class="dots" id="dotsRow" style="position:static; margin-top:10px;"></div>
+    <div class="caption-box" id="captionBox"></div>
+    <div class="player-controls">
+      <button class="ctrl-btn" onclick="restartLesson()" style="background:none; border:1px solid rgba(255,255,255,.15); width:40px; height:40px; color:#C8D0DA;">↺</button>
+      <button class="ctrl-btn" onclick="togglePause()" id="playBtn" style="background:var(--gold); padding:12px 26px; color:#142E24; font-weight:700; font-size:14px;">▶ Start</button>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen hidden" id="quizScreen">
+    <div class="header-row">
+      <span class="back" onclick="showScreen('home')">←</span>
+      <h1 class="title" id="quizTitle">Practice Quiz</h1>
+    </div>
+    <div id="quizBody"></div>
+  </div>
+
+</div>
+
+<script>
+const API = '';
+let token = null, myUsername = null, mode = 'login', myProfile = null;
+
+const EXAMS = [
+  { id: 'govt_job', emoji: '🏦', label: 'Government Job (Banking/SSC/Railway/Police)' },
+  { id: 'school', emoji: '🏫', label: 'School (Class 1-12)' },
+  { id: 'neet', emoji: '🩺', label: 'NEET (Doctor banna hai)' },
+  { id: 'jee', emoji: '⚙️', label: 'JEE (Engineer banna hai)' },
+];
+const LEVELS = [
+  { id: '10', emoji: '📗', label: 'Class 10 tak' },
+  { id: '12', emoji: '📘', label: 'Class 12 tak' },
+  { id: 'grad', emoji: '🎓', label: 'Graduate' },
+];
+
+// ---------- SUBJECTS + LESSONS (client-side content) ----------
+const SUBJECTS = [
+  {
+    id: 'reasoning', stream: 'govt_job', emoji: '🧩', name: 'Reasoning', desc: 'Logical & Analytical',
+    lessons: [
+      { id: 'r1', name: 'Coding-Decoding Basics', blocks: [
+        { speak: "Namaste students. Aaj hum Reasoning mein padhenge Coding Decoding, jo har exam mein poochha jaata hai.", board: { type: 'title', text: 'Coding-Decoding' } },
+        { speak: "Coding ka matlab hai, letters ya numbers ko ek pattern ke through badalna. Jaise agar CAT ko code kiya jaaye DBU, to har letter ek aage badh gaya.", board: { type: 'text', text: 'CAT → DBU (har letter +1)' } },
+        { speak: "Is type ke sawaal mein aapko pattern pehchanna hota hai, phir usी pattern ko naye word par apply karna hota hai.", board: { type: 'list', items: ['Pattern dhundo', 'Rule samjho (+1, -1, reverse)', 'Naye word par apply karo'] } },
+        { speak: "Chaliye practice karte hain — is topic ka quiz try karo neeche diye button se.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+      { id: 'r2', name: 'Blood Relations', blocks: [
+        { speak: "Aaj hum padhenge Blood Relations, jisme family ke rishtey ke sawaal poochhe jaate hain.", board: { type: 'title', text: 'Blood Relations' } },
+        { speak: "Is type ke sawaal mein diagram bana kar samajhna sabse aasan tareeka hai. Har rishta ek line se jodo.", board: { type: 'text', text: 'Hamesha ek Family Tree diagram banao' } },
+        { speak: "Jaise agar A, B ka beta hai, aur B, C ki beti hai, to A, C ka nawasa hoga.", board: { type: 'text', text: 'A (beta) → B (beti) → C : A, C ka nawasa hai' } },
+        { speak: "Important rishtey yaad rakho — Father ka Father, Grandfather. Mother ka Brother, Mama. Sister ka Husband, Jija.", board: { type: 'list', items: ['Father ka Father = Grandfather', "Mother ka Brother = Mama", "Sister ka Husband = Jija"] } },
+        { speak: "Ab practice karte hain kuch sawaal.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+      { id: 'r3', name: 'Direction Sense Test', blocks: [
+        { speak: "Aaj hum padhenge Direction Sense Test — isme aapko disha (jaise North, South) ka gyaan chahiye.", board: { type: 'title', text: 'Direction Sense' } },
+        { speak: "Sabse pehle yaad rakho — jab hum upar dekhte hain naksha mein, North upar hota hai, South neeche, East right side, West left side.", board: { type: 'list', items: ['North = Upar', 'South = Neeche', 'East = Right', 'West = Left'] } },
+        { speak: "Agar koi North mein chalta hai, phir Right turn leta hai, to ab wo East direction mein chalega.", board: { type: 'text', text: 'North se Right turn → East' } },
+        { speak: "Hamesha ek chhota diagram banao paper par, isse confusion nahi hoga. Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+    ]
+  },
+  {
+    id: 'maths', stream: 'govt_job', emoji: '🔢', name: 'Quantitative Aptitude', desc: 'Maths & Calculation',
+    lessons: [
+      { id: 'm1', name: 'Simple Interest', blocks: [
+        { speak: "Namaste students. Aaj hum padhenge Simple Interest, jo banking exams mein bahut important topic hai.", board: { type: 'title', text: 'Simple Interest' } },
+        { speak: "Simple Interest ka matlab hai, jab hum kisi ko paisa udhaar dete hain, to har saal usi original amount par interest lagta hai.", board: { type: 'text', text: 'Har saal SAME amount par interest lagta hai' } },
+        { speak: "Iska formula hai — S I equals P into R into T, upon 100.", board: { type: 'formula', text: 'SI = (P × R × T) / 100' } },
+        { speak: "Yahan P hai Principal, matlab jo original paisa diya gaya. R hai Rate of interest, per year. Aur T hai Time, kitne saal ke liye.", board: { type: 'list', items: ['P = Principal (asal raashi)', 'R = Rate % per year', 'T = Time (saal mein)'] } },
+        { speak: "Chaliye ek example dekhte hain. Agar Principal hai 10000 rupaye, Rate hai 5 percent, aur Time hai 2 saal.", board: { type: 'text', text: 'Example: P = ₹10,000, R = 5%, T = 2 years' } },
+        { speak: "Formula mein daalte hain — S I equals 10000 into 5 into 2, upon 100. Yeh hota hai 1000 rupaye.", board: { type: 'formula', text: 'SI = (10000 × 5 × 2) / 100 = ₹1,000' } },
+        { speak: "Bas, itna simple hai Simple Interest. Ab practice karte hain kuch sawaal.", board: { type: 'title', text: 'Shabaash! Ab Practice Karo 🎯' } },
+      ]},
+      { id: 'm2', name: 'Percentage Basics', blocks: [
+        { speak: "Aaj hum padhenge Percentage, jo har exam ki base hai — isse Profit-Loss, Interest, sab bante hain.", board: { type: 'title', text: 'Percentage' } },
+        { speak: "Percentage ka matlab hai, 'per 100 mein kitna'. Jaise 50 percent matlab 100 mein se 50.", board: { type: 'text', text: '50% = 50/100' } },
+        { speak: "Formula hai — kisi number ka X percent nikalne ke liye, us number ko X se multiply karo, phir 100 se divide karo.", board: { type: 'formula', text: 'X% of N = (X × N) / 100' } },
+        { speak: "Example — 200 ka 20 percent kitna hoga? 20 into 200 upon 100, matlab 40.", board: { type: 'formula', text: '20% of 200 = (20×200)/100 = 40' } },
+        { speak: "Ab practice karte hain.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+      { id: 'm3', name: 'Profit and Loss', blocks: [
+        { speak: "Aaj hum padhenge Profit and Loss, jo Percentage par based hai.", board: { type: 'title', text: 'Profit & Loss' } },
+        { speak: "Agar Selling Price, Cost Price se zyada hai, to Profit hota hai. Agar kam hai, to Loss hota hai.", board: { type: 'list', items: ['SP > CP → Profit', 'SP < CP → Loss'] } },
+        { speak: "Profit Percentage ka formula hai — Profit divided by Cost Price, into 100.", board: { type: 'formula', text: 'Profit% = (Profit / CP) × 100' } },
+        { speak: "Example — agar CP hai 500 aur SP hai 600, to Profit hai 100. Profit percent hoga 100 upon 500 into 100, matlab 20 percent.", board: { type: 'formula', text: 'CP=₹500, SP=₹600 → Profit=₹100 → 20%' } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+    ]
+  },
+  {
+    id: 'gk', stream: 'govt_job', emoji: '📰', name: 'Banking Awareness', desc: 'GK for Banking Exams',
+    lessons: [
+      { id: 'g1', name: 'RBI ka Introduction', blocks: [
+        { speak: "Namaste students. Aaj hum padhenge Reserve Bank of India, jise hum RBI kehte hain, ke baare mein.", board: { type: 'title', text: 'RBI — Reserve Bank of India' } },
+        { speak: "RBI bharat ka central bank hai. Yeh saare banks ko regulate karta hai, aur desh ki monetary policy banata hai.", board: { type: 'text', text: 'RBI = Bharat ka Central Bank' } },
+        { speak: "RBI ki sthapna hui thi 1935 mein. Iska headquarter hai Mumbai mein.", board: { type: 'list', items: ['Sthapna: 1935', 'Headquarter: Mumbai', 'Kaam: Currency issue, banks regulate'] } },
+        { speak: "Ab practice karte hain kuch important sawaal RBI ke baare mein.", board: { type: 'title', text: 'Shabaash! Ab Practice Karo 🎯' } },
+      ]},
+      { id: 'g2', name: 'Types of Banks in India', blocks: [
+        { speak: "Aaj hum padhenge Bharat mein kitne prakar ke banks hote hain.", board: { type: 'title', text: 'Banks ke Prakar' } },
+        { speak: "Sabse upar hai RBI, jo sabko control karta hai. Uske neeche aate hain Public Sector Banks, jaise SBI. Fir Private Banks, jaise HDFC. Fir Regional Rural Banks, aur Co-operative Banks.", board: { type: 'list', items: ['Public Sector Bank — jaise SBI', 'Private Bank — jaise HDFC', 'Regional Rural Bank', 'Co-operative Bank'] } },
+        { speak: "Public Sector Banks mein sarkar ki hissedari zyada hoti hai. Private banks private companies chalati hain.", board: { type: 'text', text: 'Public = Sarkar ki hissedari zyada' } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+      { id: 'g3', name: 'Important Banking Terms', blocks: [
+        { speak: "Aaj hum padhenge kuch zaroori Banking Terms jo exams mein poochhe jaate hain.", board: { type: 'title', text: 'Banking Terms' } },
+        { speak: "NEFT ka matlab hai National Electronic Funds Transfer — ek bank se doosre bank mein paisa bhejne ka tareeka.", board: { type: 'list', items: ['NEFT — National Electronic Funds Transfer', 'RTGS — Real Time Gross Settlement', 'IMPS — Immediate Payment Service', 'KYC — Know Your Customer'] } },
+        { speak: "RTGS bade amount ke liye use hota hai, aur turant transfer karta hai. IMPS 24 ghante available hota hai.", board: { type: 'text', text: 'RTGS = Bade amount, turant transfer' } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+    ]
+  },
+  {
+    id: 'english', stream: 'govt_job', emoji: '📖', name: 'English', desc: 'Grammar & Vocabulary',
+    lessons: [
+      { id: 'e1', name: 'Tenses Basics', blocks: [
+        { speak: "Namaste students. Aaj hum padhenge English Tenses, jo har exam mein poochhe jaate hain.", board: { type: 'title', text: 'Tenses' } },
+        { speak: "Tenses teen prakar ke hote hain — Present, Past, aur Future. Har ek batata hai ki action kab ho raha hai.", board: { type: 'list', items: ['Present — abhi ho raha hai', 'Past — pehle ho chuka', 'Future — aage hoga'] } },
+        { speak: "Present tense mein hum bolte hain — I play cricket. Past mein — I played cricket. Future mein — I will play cricket.", board: { type: 'text', text: 'I play / I played / I will play' } },
+        { speak: "Ab practice karte hain.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+      { id: 'e2', name: 'Common Errors — Subject Verb Agreement', blocks: [
+        { speak: "Aaj hum padhenge ek important rule — Subject aur Verb ka Agreement.", board: { type: 'title', text: 'Subject-Verb Agreement' } },
+        { speak: "Rule hai — Singular subject ke saath singular verb aayega, aur plural subject ke saath plural verb.", board: { type: 'list', items: ['He goes (singular)', 'They go (plural)'] } },
+        { speak: "Example — 'He go to school' galat hai, sahi hoga 'He goes to school', kyunki He singular hai.", board: { type: 'text', text: '❌ He go  →  ✅ He goes' } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+    ]
+  },
+  {
+    id: 'physics', stream: 'govt_job', emoji: '⚛️', name: 'Physics (General Science)', desc: 'SSC/Railway ke liye Physics',
+    lessons: [
+      { id: 'p1', name: 'Units and Measurement', blocks: [
+        { speak: "Namaste students. Aaj hum Physics mein padhenge Units and Measurement, jo General Science ka base hai.", board: { type: 'title', text: 'Units & Measurement' } },
+        { speak: "SI System mein length ki unit hai Metre, mass ki unit hai Kilogram, aur time ki unit hai Second.", board: { type: 'list', items: ['Length — Metre (m)', 'Mass — Kilogram (kg)', 'Time — Second (s)'] } },
+        { speak: "Temperature ki SI unit hai Kelvin. Electric current ki unit hai Ampere.", board: { type: 'list', items: ['Temperature — Kelvin (K)', 'Current — Ampere (A)'] } },
+        { speak: "Yeh saari units yaad rakhna zaroori hai, exams mein direct sawaal aata hai.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+      { id: 'p2', name: 'Laws of Motion (Newton)', blocks: [
+        { speak: "Aaj hum padhenge Newton ke Laws of Motion, jo Physics ka sabse important topic hai.", board: { type: 'title', text: "Newton's Laws of Motion" } },
+        { speak: "Pehla Niyam kehta hai — koi bhi object apni state mein rahega, jab tak koi bahari force use na badle. Isse Inertia bhi kehte hain.", board: { type: 'text', text: '1st Law: Object rest ya motion mein rehta hai, bina force ke' } },
+        { speak: "Doosra Niyam batata hai — Force equals Mass into Acceleration. Yani F equals m a.", board: { type: 'formula', text: 'F = m × a' } },
+        { speak: "Teesra Niyam kehta hai — Har action ka ek equal aur opposite reaction hota hai.", board: { type: 'text', text: '3rd Law: Action = Reaction (opposite direction)' } },
+        { speak: "Ab practice karte hain.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+      { id: 'p3', name: 'Work, Energy and Power', blocks: [
+        { speak: "Aaj hum padhenge Work, Energy aur Power ke baare mein.", board: { type: 'title', text: 'Work, Energy, Power' } },
+        { speak: "Work hota hai jab force lagakar object ko distance tak move karte hain. Formula hai — Work equals Force into Distance.", board: { type: 'formula', text: 'Work = Force × Distance' } },
+        { speak: "Energy do prakar ki hoti hai — Kinetic Energy, jo motion se aati hai, aur Potential Energy, jo position se aati hai.", board: { type: 'list', items: ['Kinetic Energy — motion se', 'Potential Energy — position se'] } },
+        { speak: "Power batata hai kitni jaldi work hota hai. Formula hai — Power equals Work upon Time.", board: { type: 'formula', text: 'Power = Work / Time' } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+      { id: 'p4', name: 'Reflection and Refraction of Light', blocks: [
+        { speak: "Aaj hum padhenge Light ke do important concepts — Reflection aur Refraction.", board: { type: 'title', text: 'Light — Reflection & Refraction' } },
+        { speak: "Reflection tab hota hai jab light kisi surface se takra kar wapas aati hai, jaise mirror mein.", board: { type: 'text', text: 'Reflection: Light wapas aati hai (jaise mirror)' } },
+        { speak: "Refraction tab hota hai jab light ek medium se doosre medium mein jaati hai, aur uska path bend ho jaata hai, jaise paani mein pencil tedhi dikhti hai.", board: { type: 'text', text: 'Refraction: Light ka path bend hota hai (jaise pani mein)' } },
+        { speak: "Reflection ka niyam hai — Angle of Incidence equals Angle of Reflection.", board: { type: 'formula', text: 'Angle of Incidence = Angle of Reflection' } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+      { id: 'p5', name: 'Electricity Basics', blocks: [
+        { speak: "Aaj hum padhenge Electricity ke basic concepts.", board: { type: 'title', text: 'Electricity Basics' } },
+        { speak: "Electric Current ka matlab hai charge ka flow. Iski unit hai Ampere.", board: { type: 'text', text: 'Current = Charge ka flow (Unit: Ampere)' } },
+        { speak: "Ohm's Law kehta hai — Voltage equals Current into Resistance.", board: { type: 'formula', text: "V = I × R (Ohm's Law)" } },
+        { speak: "Resistance ki unit hai Ohm, Voltage ki unit hai Volt.", board: { type: 'list', items: ['Voltage — Volt (V)', 'Current — Ampere (A)', 'Resistance — Ohm (Ω)'] } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+      { id: 'p6', name: 'Sound Waves', blocks: [
+        { speak: "Aaj hum padhenge Sound ke baare mein — yeh bhi ek wave hai.", board: { type: 'title', text: 'Sound Waves' } },
+        { speak: "Sound ko safar karne ke liye medium chahiye — hawa, paani, ya solid. Sound vacuum mein nahi chal sakti.", board: { type: 'text', text: 'Sound ko medium chahiye — vacuum mein nahi chalti' } },
+        { speak: "Sound ki speed hawa mein approximately 343 metre per second hoti hai, aur solid mein sabse fast chalti hai.", board: { type: 'list', items: ['Hawa mein — 343 m/s (approx)', 'Solid mein — sabse fast', 'Vacuum mein — bilkul nahi'] } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+    ]
+  },
+
+  // ===== SCHOOL (Class 1-12) =====
+  {
+    id: 's_maths', stream: 'school', emoji: '🔢', name: 'School Maths', desc: 'Basic se shuru karo',
+    lessons: [
+      { id: 's_m1', name: 'Ginti aur Basic Addition', blocks: [
+        { speak: "Namaste bacchon. Aaj hum seekhenge ginti aur addition, matlab jodna.", board: { type: 'title', text: 'Ginti aur Jodna' } },
+        { speak: "Jaise agar humare paas 2 seb hain, aur koi 3 seb aur de de, to total kitne seb honge? Hum 2 aur 3 jodenge, jawab hoga 5.", board: { type: 'formula', text: '2 + 3 = 5 seb' } },
+        { speak: "Addition ka matlab hai do ya zyada numbers ko milana. Ab practice karte hain.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+    ]
+  },
+  {
+    id: 's_science', stream: 'school', emoji: '🔬', name: 'School Science', desc: 'Environment aur Basic Science',
+    lessons: [
+      { id: 's_s1', name: 'Paudhe aur Unki Zarurat', blocks: [
+        { speak: "Namaste bacchon. Aaj hum padhenge Paudhe, matlab plants, ke baare mein.", board: { type: 'title', text: 'Paudhe (Plants)' } },
+        { speak: "Paudhon ko badhne ke liye teen cheezein chahiye — Sunlight, Paani, aur Hawa.", board: { type: 'list', items: ['Sunlight (Dhoop)', 'Paani (Water)', 'Hawa (Air)'] } },
+        { speak: "Paudhe apna khana khud banate hain, jise Photosynthesis kehte hain.", board: { type: 'text', text: 'Paudhe khud khana banate hain — Photosynthesis' } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+    ]
+  },
+
+  // ===== NEET (Medical) =====
+  {
+    id: 'neet_bio', stream: 'neet', emoji: '🧬', name: 'Biology (NEET)', desc: 'Zoology & Botany',
+    lessons: [
+      { id: 'nb1', name: 'Cell — Jeevan ki Iकाई', blocks: [
+        { speak: "Namaste students. Aaj hum padhenge Cell, jo jeevan ki sabse chhoti iकाई hai.", board: { type: 'title', text: 'Cell (Koshika)' } },
+        { speak: "Har jeevit cheez cells se milkar bani hoti hai. Cell do prakar ki hoti hai — Prokaryotic aur Eukaryotic.", board: { type: 'list', items: ['Prokaryotic — nucleus nahi hota', 'Eukaryotic — nucleus hota hai'] } },
+        { speak: "Cell ke andar Nucleus hota hai, jo cell ki activities control karta hai, jaise brain karta hai.", board: { type: 'text', text: 'Nucleus = Cell ka control center' } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+    ]
+  },
+  {
+    id: 'neet_chem', stream: 'neet', emoji: '🧪', name: 'Chemistry (NEET)', desc: 'Organic, Inorganic, Physical',
+    lessons: [
+      { id: 'nc1', name: 'Periodic Table Basics', blocks: [
+        { speak: "Namaste students. Aaj hum padhenge Periodic Table, jisme saare elements arrange kiye gaye hain.", board: { type: 'title', text: 'Periodic Table' } },
+        { speak: "Elements ko unke Atomic Number ke hisaab se arrange kiya gaya hai — matlab protons ki sankhya ke hisaab se.", board: { type: 'text', text: 'Elements arranged by Atomic Number' } },
+        { speak: "Periodic Table mein Rows ko Period kehte hain, aur Columns ko Group kehte hain.", board: { type: 'list', items: ['Row = Period', 'Column = Group'] } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+    ]
+  },
+
+  // ===== JEE (Engineering) =====
+  {
+    id: 'jee_phy', stream: 'jee', emoji: '⚛️', name: 'Physics (JEE)', desc: 'Mechanics, Electricity & more',
+    lessons: [
+      { id: 'jp1', name: 'Kinematics — Motion Basics', blocks: [
+        { speak: "Namaste students. Aaj hum padhenge Kinematics, jisme hum motion ko study karte hain.", board: { type: 'title', text: 'Kinematics' } },
+        { speak: "Velocity ka matlab hai, kitni speed se aur kis direction mein object move kar raha hai.", board: { type: 'formula', text: 'Velocity = Displacement / Time' } },
+        { speak: "Acceleration batata hai ki velocity kitni fast badal rahi hai.", board: { type: 'formula', text: 'Acceleration = Change in Velocity / Time' } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+    ]
+  },
+  {
+    id: 'jee_math', stream: 'jee', emoji: '📐', name: 'Maths (JEE)', desc: 'Algebra, Calculus & more',
+    lessons: [
+      { id: 'jm1', name: 'Quadratic Equations', blocks: [
+        { speak: "Namaste students. Aaj hum padhenge Quadratic Equations.", board: { type: 'title', text: 'Quadratic Equations' } },
+        { speak: "Quadratic Equation ka general form hota hai — a x squared, plus b x, plus c, equals zero.", board: { type: 'formula', text: 'ax² + bx + c = 0' } },
+        { speak: "Iske roots nikalne ka formula hai — x equals minus b plus minus square root of b squared minus 4 a c, sab upon 2 a.", board: { type: 'formula', text: 'x = (-b ± √(b²-4ac)) / 2a' } },
+        { speak: "Ab practice karo.", board: { type: 'title', text: 'Ab Practice Karo 🎯' } },
+      ]},
+    ]
+  },
+];
+
+const QUIZZES = {
+  r1: { title: 'Coding-Decoding Quiz', questions: [
+    { q: "Agar DOG ko code kiya jaaye EPH, to CAT ko kaise code karenge?", options: ['DBU', 'CAT', 'BZS', 'DAU'], correct: 0 },
+    { q: "Coding-Decoding mein pattern dhundhne ke baad kya karte hain?", options: ['Bhool jaate hain', 'Naye word par apply karte hain', 'Kuch nahi'], correct: 1 },
+  ]},
+  r2: { title: 'Blood Relations Quiz', questions: [
+    { q: "Father ka Father kya kehlata hai?", options: ['Mama', 'Grandfather', 'Chacha', 'Bhai'], correct: 1 },
+    { q: "Mother ka Brother kya kehlata hai?", options: ['Mama', 'Chacha', 'Jija', 'Nana'], correct: 0 },
+  ]},
+  r3: { title: 'Direction Sense Quiz', questions: [
+    { q: "Naksha mein North kaunsi taraf hota hai?", options: ['Neeche', 'Upar', 'Left', 'Right'], correct: 1 },
+    { q: "Agar koi North mein chal raha hai aur Right turn leta hai, to ab kaunsi direction hai?", options: ['West', 'South', 'East', 'North'], correct: 2 },
+  ]},
+  m1: { title: 'Simple Interest Quiz', questions: [
+    { q: "SI ka formula kya hai?", options: ['P+R+T', '(P×R×T)/100', 'P×R×T', '(P+R)/T'], correct: 1 },
+    { q: "Agar P=5000, R=4%, T=3 saal, to SI kitna hoga?", options: ['₹600', '₹500', '₹700', '₹800'], correct: 0 },
+  ]},
+  m2: { title: 'Percentage Quiz', questions: [
+    { q: "200 ka 25% kitna hoga?", options: ['25', '50', '75', '100'], correct: 1 },
+    { q: "50% ka matlab kya hota hai?", options: ['50/1000', '50/100', '5/100', '500/100'], correct: 1 },
+  ]},
+  m3: { title: 'Profit & Loss Quiz', questions: [
+    { q: "Agar SP > CP, to kya hota hai?", options: ['Loss', 'Profit', 'Kuch nahi', 'Dono'], correct: 1 },
+    { q: "CP=400, SP=500, to Profit % kitna hoga?", options: ['20%', '25%', '10%', '15%'], correct: 1 },
+  ]},
+  g1: { title: 'RBI Quiz', questions: [
+    { q: "RBI ki sthapna kab hui?", options: ['1935', '1947', '1950', '1920'], correct: 0 },
+    { q: "RBI ka headquarter kahan hai?", options: ['Delhi', 'Mumbai', 'Kolkata', 'Chennai'], correct: 1 },
+  ]},
+  g2: { title: 'Banks ke Prakar Quiz', questions: [
+    { q: "SBI kis type ka bank hai?", options: ['Private', 'Public Sector', 'Co-operative', 'Foreign'], correct: 1 },
+    { q: "HDFC kis type ka bank hai?", options: ['Public Sector', 'Private', 'RRB', 'Co-operative'], correct: 1 },
+  ]},
+  g3: { title: 'Banking Terms Quiz', questions: [
+    { q: "NEFT ka full form kya hai?", options: ['National Electronic Funds Transfer', 'New Electronic Fund Tool', 'National Easy Fund Transfer', 'None'], correct: 0 },
+    { q: "Bade amount ke turant transfer ke liye kya use hota hai?", options: ['NEFT', 'RTGS', 'Cheque', 'Cash'], correct: 1 },
+  ]},
+  e1: { title: 'Tenses Quiz', questions: [
+    { q: "'I played cricket' kaunsa tense hai?", options: ['Present', 'Past', 'Future', 'None'], correct: 1 },
+    { q: "Future tense mein kaunsa word use hota hai?", options: ['was', 'will', 'is', 'has'], correct: 1 },
+  ]},
+  e2: { title: 'Subject-Verb Quiz', questions: [
+    { q: "Sahi vakya kaunsa hai?", options: ['He go daily', 'He goes daily', 'He going daily', 'He gone daily'], correct: 1 },
+    { q: "'They ___ to school' mein sahi verb kya hoga?", options: ['goes', 'go', 'going', 'gone'], correct: 1 },
+  ]},
+  p1: { title: 'Units & Measurement Quiz', questions: [
+    { q: "Length ki SI unit kya hai?", options: ['Kilogram', 'Metre', 'Second', 'Ampere'], correct: 1 },
+    { q: "Temperature ki SI unit kya hai?", options: ['Celsius', 'Fahrenheit', 'Kelvin', 'Joule'], correct: 2 },
+  ]},
+  p2: { title: "Newton's Laws Quiz", questions: [
+    { q: "F = m × a kaunsa Newton's Law hai?", options: ['1st Law', '2nd Law', '3rd Law', 'Koi nahi'], correct: 1 },
+    { q: "'Har action ka equal opposite reaction hai' — yeh kaunsa law hai?", options: ['1st Law', '2nd Law', '3rd Law', 'Koi nahi'], correct: 2 },
+  ]},
+  p3: { title: 'Work-Energy-Power Quiz', questions: [
+    { q: "Work ka formula kya hai?", options: ['Force × Distance', 'Force / Distance', 'Force + Distance', 'Mass × Distance'], correct: 0 },
+    { q: "Power ka formula kya hai?", options: ['Work × Time', 'Work / Time', 'Time / Work', 'Force / Time'], correct: 1 },
+  ]},
+  p4: { title: 'Light Quiz', questions: [
+    { q: "Mirror mein light wapas aana kya kehlata hai?", options: ['Refraction', 'Reflection', 'Diffraction', 'Absorption'], correct: 1 },
+    { q: "Reflection ka niyam kya hai?", options: ['Angle badalta hai', 'Angle of Incidence = Angle of Reflection', 'Koi niyam nahi', 'Speed change hoti hai'], correct: 1 },
+  ]},
+  p5: { title: 'Electricity Quiz', questions: [
+    { q: "Ohm's Law kya hai?", options: ['V = I × R', 'V = I / R', 'V = I + R', 'V = I - R'], correct: 0 },
+    { q: "Resistance ki unit kya hai?", options: ['Volt', 'Ampere', 'Ohm', 'Watt'], correct: 2 },
+  ]},
+  p6: { title: 'Sound Waves Quiz', questions: [
+    { q: "Sound kis mein nahi chal sakti?", options: ['Hawa', 'Paani', 'Solid', 'Vacuum'], correct: 3 },
+    { q: "Sound sabse fast kaha chalti hai?", options: ['Hawa', 'Paani', 'Solid', 'Vacuum'], correct: 2 },
+  ]},
+  s_m1: { title: 'Ginti Quiz', questions: [
+    { q: "2 + 3 kitna hota hai?", options: ['4', '5', '6'], correct: 1 },
+  ]},
+  s_s1: { title: 'Paudhe Quiz', questions: [
+    { q: "Paudhon ko badhne ke liye kya chahiye?", options: ['Sirf Paani', 'Sunlight, Paani, Hawa', 'Sirf Hawa'], correct: 1 },
+  ]},
+  nb1: { title: 'Cell Quiz', questions: [
+    { q: "Cell ka control center kya hai?", options: ['Nucleus', 'Wall', 'Membrane'], correct: 0 },
+  ]},
+  nc1: { title: 'Periodic Table Quiz', questions: [
+    { q: "Periodic Table ki Rows ko kya kehte hain?", options: ['Group', 'Period', 'Block'], correct: 1 },
+  ]},
+  jp1: { title: 'Kinematics Quiz', questions: [
+    { q: "Velocity ka formula kya hai?", options: ['Displacement/Time', 'Time/Displacement', 'Mass×Acceleration'], correct: 0 },
+  ]},
+  jm1: { title: 'Quadratic Equations Quiz', questions: [
+    { q: "Quadratic Equation ka general form kya hai?", options: ['ax+b=0', 'ax²+bx+c=0', 'ax³=0'], correct: 1 },
+  ]},
+};
+
+// ---------- AUTH ----------
+function toggleMode(){
+  mode = mode === 'login' ? 'signup' : 'login';
+  document.getElementById('authSub').textContent = mode === 'login' ? 'Login karo' : 'Naya account banao';
+  document.getElementById('authBtn').textContent = mode === 'login' ? 'Login' : 'Sign Up';
+  document.getElementById('authBtn').onclick = mode === 'login' ? doLogin : doSignup;
+  document.getElementById('switchText').textContent = mode === 'login' ? 'Account nahi hai? Sign Up karo' : 'Pehle se account hai? Login karo';
+  document.getElementById('authErr').classList.add('hidden');
+}
+function showErr(msg){ const e = document.getElementById('authErr'); e.textContent = msg; e.classList.remove('hidden'); }
+
+async function doSignup(){
+  const username = document.getElementById('uname').value;
+  const password = document.getElementById('pword').value;
+  try{
+    const r = await fetch(API+'/api/signup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username,password}) });
+    const data = await r.json();
+    if(!r.ok){ showErr(data.error||'Signup fail hua'); return; }
+    token=data.token; myUsername=data.username; myProfile=null;
+    afterAuth();
+  }catch(e){ showErr('Server se connect nahi ho paya'); }
+}
+async function doLogin(){
+  const username = document.getElementById('uname').value;
+  const password = document.getElementById('pword').value;
+  try{
+    const r = await fetch(API+'/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username,password}) });
+    const data = await r.json();
+    if(!r.ok){ showErr(data.error||'Login fail hua'); return; }
+    token=data.token; myUsername=data.username; myProfile=data.profile;
+    afterAuth();
+  }catch(e){ showErr('Server se connect nahi ho paya'); }
+}
+function afterAuth(){
+  document.getElementById('authScreen').classList.add('hidden');
+  if(myProfile && myProfile.exam && myProfile.level){
+    showScreen('home');
+  } else {
+    renderOnboarding();
+    showScreen('onboard');
+  }
+}
+function logout(){
+  token=null; myUsername=null; myProfile=null;
+  document.getElementById('uname').value=''; document.getElementById('pword').value='';
+  showScreen('auth');
+}
+
+// ---------- SCREEN NAV ----------
+function showScreen(name){
+  ['authScreen','onboardScreen','homeScreen','lessonListScreen','playerScreen','quizScreen','meraDataScreen'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  const map = { auth:'authScreen', onboard:'onboardScreen', home:'homeScreen', lessonList:'lessonListScreen', player:'playerScreen', quiz:'quizScreen', meraData:'meraDataScreen' };
+  document.getElementById(map[name]).classList.remove('hidden');
+  if(name==='home') renderHome();
+  if(name==='meraData') loadMeraData();
+}
+
+// ---------- MERA DATA (form-fill helper) ----------
+async function loadMeraData(){
+  try{
+    const r = await fetch(API+'/api/profile', { headers:{'Authorization':'Bearer '+token} });
+    const data = await r.json();
+    const d = (data.profile && data.profile.meraData) || {};
+    document.getElementById('md_name').value = d.name || '';
+    document.getElementById('md_father').value = d.father || '';
+    document.getElementById('md_dob').value = d.dob || '';
+    document.getElementById('md_address').value = d.address || '';
+    document.getElementById('md_qualification').value = d.qualification || '';
+    document.getElementById('md_category').value = d.category || '';
+    document.getElementById('md_mobile').value = d.mobile || '';
+    document.getElementById('md_email').value = d.email || '';
+    renderMeraDataView(d);
+  }catch(e){}
+}
+async function saveMeraData(){
+  const meraData = {
+    name: document.getElementById('md_name').value,
+    father: document.getElementById('md_father').value,
+    dob: document.getElementById('md_dob').value,
+    address: document.getElementById('md_address').value,
+    qualification: document.getElementById('md_qualification').value,
+    category: document.getElementById('md_category').value,
+    mobile: document.getElementById('md_mobile').value,
+    email: document.getElementById('md_email').value,
+  };
+  try{
+    await fetch(API+'/api/profile', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({ meraData }) });
+    renderMeraDataView(meraData);
+    alert('Save ho gaya! Ab neeche se copy kar sakte ho.');
+  }catch(e){ alert('Save nahi ho paya, dobara try karo'); }
+}
+function renderMeraDataView(d){
+  const labels = { name:'Naam', father:"Father's Name", dob:'DOB', address:'Address', qualification:'Qualification', category:'Category', mobile:'Mobile', email:'Email' };
+  const view = document.getElementById('meraDataView');
+  const hasData = Object.values(d).some(v => v);
+  if(!hasData){ view.innerHTML = ''; return; }
+  view.innerHTML = '<div style="color:#fff; font-weight:700; font-size:14px; margin-bottom:10px;">Form bharte waqt yahan se copy karo:</div>' +
+    Object.keys(labels).map(k => d[k] ? `
+      <div style="display:flex; align-items:center; gap:10px; background:var(--card); border-radius:10px; padding:10px 14px; margin-bottom:8px;">
+        <div style="flex:1;">
+          <div style="color:var(--sub); font-size:11px;">${labels[k]}</div>
+          <div style="color:#fff; font-size:14px;">${d[k]}</div>
+        </div>
+        <button onclick="copyText('${(d[k]+'').replace(/'/g,"\\'")}')" style="background:var(--accent); border:none; border-radius:8px; padding:6px 12px; color:#fff; font-size:12px; cursor:pointer;">Copy</button>
+      </div>` : '').join('');
+}
+function copyText(text){
+  navigator.clipboard.writeText(text).then(() => {
+    // simple feedback
+  }).catch(() => {
+    alert('Copy nahi ho paya, manually select karke copy karo');
+  });
+}
+
+// ---------- ONBOARDING ----------
+let selectedExam = null, selectedLevel = null;
+function renderOnboarding(){
+  document.getElementById('obStep1').classList.remove('hidden');
+  document.getElementById('obStep2').classList.add('hidden');
+  const eo = document.getElementById('examOptions');
+  eo.innerHTML = EXAMS.map(e => `<div class="option-card" data-id="${e.id}" onclick="selectExam('${e.id}')"><span class="option-emoji">${e.emoji}</span>${e.label}</div>`).join('');
+  const lo = document.getElementById('levelOptions');
+  lo.innerHTML = LEVELS.map(l => `<div class="option-card" data-id="${l.id}" onclick="selectLevel('${l.id}')"><span class="option-emoji">${l.emoji}</span>${l.label}</div>`).join('');
+}
+function selectExam(id){
+  selectedExam = id;
+  document.querySelectorAll('#examOptions .option-card').forEach(c => c.classList.toggle('selected', c.dataset.id===id));
+}
+function selectLevel(id){
+  selectedLevel = id;
+  document.querySelectorAll('#levelOptions .option-card').forEach(c => c.classList.toggle('selected', c.dataset.id===id));
+}
+function goObStep2(){
+  if(!selectedExam){ alert('Pehle exam choose karo'); return; }
+  document.getElementById('obStep1').classList.add('hidden');
+  document.getElementById('obStep2').classList.remove('hidden');
+}
+async function finishOnboarding(){
+  if(!selectedLevel){ alert('Pehle level choose karo'); return; }
+  myProfile = { exam: selectedExam, level: selectedLevel };
+  try{
+    await fetch(API+'/api/profile', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify(myProfile) });
+  }catch(e){}
+  showScreen('home');
+}
+
+// ---------- HOME ----------
+async function renderHome(){
+  const examLabel = EXAMS.find(e => e.id === (myProfile && myProfile.exam))?.label || '';
+  document.getElementById('homeSub').textContent = 'Namaste ' + myUsername + ' · ' + examLabel;
+  let progress = { completedLessons: [] };
+  try{
+    const r = await fetch(API+'/api/progress', { headers:{'Authorization':'Bearer '+token} });
+    const data = await r.json();
+    if(r.ok) progress = data.progress;
+  }catch(e){}
+  const list = document.getElementById('subjectList');
+  const mySubjects = SUBJECTS.filter(s => s.stream === (myProfile && myProfile.exam));
+  list.innerHTML = mySubjects.map(s => {
+    const total = s.lessons.length;
+    const done = s.lessons.filter(l => progress.completedLessons.includes(l.id)).length;
+    const pct = total ? Math.round(done/total*100) : 0;
+    return `
+      <div class="subject-card" onclick="openSubject('${s.id}')">
+        <div class="subject-head">
+          <span class="subject-emoji">${s.emoji}</span>
+          <div>
+            <div class="subject-name">${s.name}</div>
+            <div class="subject-desc">${s.desc} · ${done}/${total} lessons</div>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  }).join('');
+}
+
+let currentSubject = null;
+async function openSubject(id){
+  currentSubject = SUBJECTS.find(s => s.id === id);
+  document.getElementById('lessonListTitle').textContent = currentSubject.name;
+  let progress = { completedLessons: [] };
+  try{
+    const r = await fetch(API+'/api/progress', { headers:{'Authorization':'Bearer '+token} });
+    const data = await r.json();
+    if(r.ok) progress = data.progress;
+  }catch(e){}
+  const body = document.getElementById('lessonListBody');
+  body.innerHTML = currentSubject.lessons.map((l,i) => {
+    const done = progress.completedLessons.includes(l.id);
+    return `
+      <div class="lesson-row" onclick="openLesson('${l.id}')">
+        <div class="lesson-num ${done?'done':''}">${done?'✓':i+1}</div>
+        <div class="lesson-name">${l.name}</div>
+        <div style="color:var(--sub); font-size:18px">›</div>
+      </div>`;
+  }).join('') + `<div style="padding:16px"><button class="btn secondary" onclick="openQuiz('${currentSubject.lessons[0].id}')">📝 Is Subject ka Quiz Do</button></div>`;
+  showScreen('lessonList');
+}
+
+// ---------- LESSON PLAYER ----------
+let currentLesson = null, step = -1, playing = false, spokenWords = 0;
+const supported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+function openLesson(id){
+  currentLesson = currentSubject.lessons.find(l => l.id === id);
+  document.getElementById('playerTitle').textContent = currentLesson.name;
+  step = -1; playing = false; spokenWords = 0;
+  renderDots(); renderBoard(); renderCaption();
+  document.getElementById('playBtn').innerHTML = '▶ Start';
+  showScreen('player');
+}
+function renderDots(){
+  document.getElementById('dotsRow').innerHTML = currentLesson.blocks.map((_,i) =>
+    `<div class="dot ${i===step?'active':''}"></div>`).join('');
+}
+function renderBoard(){
+  const area = document.getElementById('boardArea');
+  if(step < 0){
+    area.innerHTML = `<div style="text-align:center; color:#F5F0E1; opacity:.8; font-family:'Kalam',cursive; font-size:20px;">Class shuru karne ke liye<br>neeche ▶ Start dabao</div>`;
+    return;
+  }
+  const b = currentLesson.blocks[step].board;
+  if(b.type === 'title') area.innerHTML = `<div class="board-title">${b.text}</div>`;
+  else if(b.type === 'text') area.innerHTML = `<div class="board-text">${b.text}</div>`;
+  else if(b.type === 'formula') area.innerHTML = `<div class="board-formula">${b.text}</div>`;
+  else if(b.type === 'list') area.innerHTML = `<div class="board-list">${b.items.map(it=>`<div>— ${it}</div>`).join('')}</div>`;
+}
+function renderCaption(){
+  const box = document.getElementById('captionBox');
+  if(step < 0){ box.innerHTML=''; return; }
+  const words = currentLesson.blocks[step].speak.split(' ');
+  box.innerHTML = words.map((w,i) => `<span class="${i<spokenWords?'spoken':''}">${w} </span>`).join('');
+}
+function speakBlock(index){
+  if(!supported) return;
+  window.speechSynthesis.cancel();
+  const block = currentLesson.blocks[index];
+  const utter = new SpeechSynthesisUtterance(block.speak);
+  utter.rate = 0.95;
+  utter.onboundary = (e) => {
+    if(e.name === 'word'){
+      spokenWords = block.speak.slice(0, e.charIndex).split(' ').length;
+      renderCaption();
+    }
+  };
+  utter.onend = () => {
+    if(index < currentLesson.blocks.length - 1){
+      setTimeout(() => { step = index+1; spokenWords=0; renderDots(); renderBoard(); renderCaption(); speakBlock(step); }, 700);
+    } else {
+      playing = false;
+      document.getElementById('playBtn').innerHTML = '↺ Dobara Suno';
+      markLessonComplete();
+    }
+  };
+  utter.onerror = () => { playing = false; };
+  window.speechSynthesis.speak(utter);
+}
+function togglePause(){
+  if(!supported){ alert('Is browser mein voice support nahi hai. Chrome try karo.'); return; }
+  if(step === -1 || (step === currentLesson.blocks.length-1 && !playing && spokenWords > 0 && !window.speechSynthesis.speaking)){
+    step = 0; spokenWords = 0; playing = true;
+    renderDots(); renderBoard(); renderCaption();
+    document.getElementById('playBtn').innerHTML = '⏸ Pause';
+    speakBlock(0);
+  } else if(playing){
+    window.speechSynthesis.pause(); playing = false;
+    document.getElementById('playBtn').innerHTML = '▶ Resume';
+  } else {
+    window.speechSynthesis.resume(); playing = true;
+    document.getElementById('playBtn').innerHTML = '⏸ Pause';
+  }
+}
+function restartLesson(){
+  if(supported) window.speechSynthesis.cancel();
+  step = -1; playing = false; spokenWords = 0;
+  renderDots(); renderBoard(); renderCaption();
+  document.getElementById('playBtn').innerHTML = '▶ Start';
+}
+function stopAndGoBack(){
+  if(supported) window.speechSynthesis.cancel();
+  showScreen('lessonList');
+}
+async function markLessonComplete(){
+  try{
+    await fetch(API+'/api/progress', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({ lessonId: currentLesson.id }) });
+  }catch(e){}
+}
+
+// ---------- QUIZ ----------
+function openQuiz(lessonId){
+  const quiz = QUIZZES[lessonId];
+  if(!quiz){ alert('Is subject ka quiz jald aayega'); return; }
+  document.getElementById('quizTitle').textContent = quiz.title;
+  let score = 0, answered = 0;
+  const body = document.getElementById('quizBody');
+  body.innerHTML = quiz.questions.map((q,qi) => `
+    <div class="quiz-q">${qi+1}. ${q.q}</div>
+    <div id="qopts-${qi}">
+      ${q.options.map((o,oi) => `<div class="quiz-opt" onclick="answerQuiz(${qi},${oi},'${lessonId}')">${o}</div>`).join('')}
+    </div>
+  `).join('') + `<div id="quizResult" style="margin:20px 16px; color:var(--sub); font-size:13px;"></div>`;
+  window._quizState = { lessonId, score: 0, answered: 0, total: quiz.questions.length };
+  showScreen('quiz');
+}
+function answerQuiz(qi, oi, lessonId){
+  const quiz = QUIZZES[lessonId];
+  const opts = document.getElementById('qopts-'+qi).children;
+  for(let i=0;i<opts.length;i++){
+    opts[i].onclick = null;
+    if(i === quiz.questions[qi].correct) opts[i].classList.add('correct');
+    else if(i === oi) opts[i].classList.add('wrong');
+  }
+  const st = window._quizState;
+  st.answered++;
+  if(oi === quiz.questions[qi].correct) st.score++;
+  if(st.answered === st.total){
+    document.getElementById('quizResult').textContent = `Aapka score: ${st.score} / ${st.total}`;
+    fetch(API+'/api/progress', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({ quizId: lessonId, score: st.score, total: st.total }) }).catch(()=>{});
+  }
+}
+</script>
+</body>
+</html>
